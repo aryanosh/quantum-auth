@@ -38,18 +38,6 @@ In a world approaching **“Q-Day,”** standard RSA/ECC encryption becomes vuln
 | Database | SQLite (dev) / PostgreSQL-ready |
 
 ---
-
-## 📸 Demo Highlights
-
-Replace these placeholders with GIFs/screenshots (recommended for recruiter engagement):
-
-- **🔐 Step 1**: PQC Login  
-  `docs/screenshots/login.png`
-- **🤳 Step 2**: Biometric Challenge  
-  `docs/screenshots/biometric.png`
-- **📊 Step 3**: Security Dashboard  
-  `docs/screenshots/dashboard.png`
-
 ---
 
 ## ⚙️ System Design & Security Trade-offs
