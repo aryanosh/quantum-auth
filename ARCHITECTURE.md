@@ -45,7 +45,7 @@ sequenceDiagram
 flowchart LR
   A[Webcam image / fingerprint data] --> B[Feature extraction]
   B --> C[Normalize / template]
-  C --> D[Encrypt template (PQC or fallback)]
+  C --> D["Encrypt template (PQC or fallback)"]
   D --> E[(Store in DB)]
   E --> F[Decrypt on login]
   F --> G[Similarity / match scoring]
@@ -66,4 +66,3 @@ flowchart LR
 - **Argon2id**: modern password hashing best-practice.
 - **Encrypted biometrics**: avoids storing raw biometric data; matches common privacy expectations.
 - **Configurable thresholds**: demonstrates risk tuning and false accept/reject trade-offs.
-
