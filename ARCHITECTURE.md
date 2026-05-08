@@ -1,68 +1,57 @@
-## Architecture (Quantum-Inspired Authentication)
+# Quantum-Auth Architecture
 
-### Overview
-
-- **Frontend**: React (routes, auth context, webcam capture UX)
-- **Backend**: Flask (JWT auth + biometric verification + PQC/QRNG status)
-- **Storage**: SQLAlchemy models (users + WebAuthn credentials)
-- **Security**: Argon2 password hashing, encrypted biometric templates, JWT sessions
-
-### Auth flow (register → login → logout)
+Here is a visual architecture diagram for **Quantum-Auth** along with descriptions for the key components and the flow of data.
 
 ```mermaid
-sequenceDiagram
-  participant U as User
-  participant FE as Frontend (React)
-  participant BE as Backend (Flask)
-  participant DB as DB (SQLite/Postgres)
+flowchart TD
+    %% Define Styles for better scaling and visuals
+    classDef frontend fill:#3b82f6,stroke:#2563eb,stroke-width:2px,color:#fff;
+    classDef backend fill:#10b981,stroke:#059669,stroke-width:2px,color:#fff;
+    classDef crypto fill:#8b5cf6,stroke:#7c3aed,stroke-width:2px,color:#fff;
+    classDef database fill:#f59e0b,stroke:#d97706,stroke-width:2px,color:#fff;
 
-  U->>FE: Register (username/email/password + optional biometrics)
-  FE->>BE: POST /api/register
-  BE->>BE: Argon2 hash password
-  BE->>BE: Extract embedding (face) / template (fingerprint)
-  BE->>BE: Encrypt biometric data (Kyber or Fernet fallback)
-  BE->>DB: Insert user row
-  BE-->>FE: JWT token + user payload
+    User([👤 User]) -->|Interacts with| ClientUI
 
-  U->>FE: Login (password)
-  FE->>BE: POST /api/login
-  alt biometrics enrolled
-    BE-->>FE: 401 requires_biometric: face/fingerprint
-    FE->>U: prompt webcam / sensor flow
-    FE->>BE: POST /api/login (+ biometric payload)
-    BE->>BE: Decrypt stored template + compare
-  end
-  BE-->>FE: JWT token + security_info
-  FE->>FE: Store token + show dashboard
+    subgraph Frontend["Frontend Layer (React + Tailwind / JS)"]
+        ClientUI["💻 User Interface\n(Captures Credentials & Biometrics)"]:::frontend
+        JWTSession["🔑 Local Session Management\n(Stores JWT)"]:::frontend
+    end
 
-  U->>FE: Logout
-  FE->>FE: Clear stored token
+    ClientUI -->|Auth Request (Payload)| APIGateway
+
+    subgraph Backend["Backend Layer (Python)"]
+        APIGateway["🌐 API Handlers / Gateway\n(Routes requests)"]:::backend
+        SessionControl["🛡️ Session Control\n(Issues & Validates JWTs)"]:::backend
+        
+        subgraph SecurityCore["Core Security & Identity Engine"]
+            AuthEngine["⚙️ Authentication Engine\n(Coordinates verification)"]:::backend
+            BiometricVerifier["👁️ Biometric Verification\n(Validates traits)"]:::crypto
+            PQCrypto["🔒 Post-Quantum Crypto Techniques\n(Future-proof encryption)"]:::crypto
+            Argon2id["🔐 Password Hashing\n(Argon2id)"]:::crypto
+        end
+    end
+
+    APIGateway --> SessionControl
+    APIGateway --> AuthEngine
+    AuthEngine <--> BiometricVerifier
+    AuthEngine <--> PQCrypto
+    AuthEngine <--> Argon2id
+
+    subgraph Storage["Data Persistence Layer"]
+        DB[("🗄️ Secure Database\n- Argon2id Password Hashes\n- Encrypted Biometric Templates")]:::database
+    end
+
+    AuthEngine -->|Fetches/Compares Data| DB
+    SessionControl -.->|Returns JWT upon success| ClientUI
 ```
 
-### Biometric enrollment & verification
+### Architectural Description
 
-```mermaid
-flowchart LR
-  A[Webcam image / fingerprint data] --> B[Feature extraction]
-  B --> C[Normalize / template]
-  C --> D["Encrypt template (PQC or fallback)"]
-  D --> E[(Store in DB)]
-  E --> F[Decrypt on login]
-  F --> G[Similarity / match scoring]
-  G --> H{Threshold pass?}
-  H -- No --> I[Reject login]
-  H -- Yes --> J[Issue JWT]
-```
-
-### PQC / QRNG usage
-
-- **PQC (Kyber KEM)**: used to protect encryption keys when available; otherwise fall back to Fernet.
-- **QRNG**: ANU QRNG when available; otherwise use `secrets`-based fallback.
-- **Why fallback exists**: to keep the demo runnable on typical machines while still demonstrating the architecture and decision points.
-
-### Why these design choices (portfolio angle)
-
-- **JWT**: straightforward stateless sessions; easy to demo with a dashboard and protected routes.
-- **Argon2id**: modern password hashing best-practice.
-- **Encrypted biometrics**: avoids storing raw biometric data; matches common privacy expectations.
-- **Configurable thresholds**: demonstrates risk tuning and false accept/reject trade-offs.
+1. **Frontend Layer (JavaScript - React + Tailwind):**
+   - Acts as the presentation layer providing a modern, responsive UI. It captures user input, including traditional credentials and biometric data, securely passing it to the backend. It also handles the local storage and injection of JWTs for subsequent requests.
+2. **Backend Layer (Python):**
+   - **API Handlers:** The entry point for frontend requests.
+   - **Session Control:** Generates and validates **JWT (JSON Web Tokens)** to maintain secure, stateless sessions that scale easily across multiple servers.
+   - **Core Security Engine:** This is where the heavy lifting happens. It orchestrates the **Argon2id** hashing for traditional passwords, the **Biometric Verification** module for identity traits, and wraps the sensitive operations using **Post-Quantum Cryptographic techniques** to ensure long-term resistance against future quantum computing attacks.
+3. **Data Persistence Layer:**
+   - Safely stores user profiles, the salted/hashed Argon2id passwords, and the post-quantum encrypted biometric templates.
