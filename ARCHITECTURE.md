@@ -17,7 +17,7 @@ flowchart TD
         JWTSession["🔑 Local Session Management\n(Stores JWT)"]:::frontend
     end
 
-    ClientUI -->|Auth Request\n(Payload)| APIGateway
+    ClientUI -->|Auth Request (Payload)| APIGateway
 
     subgraph Backend["Backend Layer (Python)"]
         APIGateway["🌐 API Handlers / Gateway\n(Routes requests)"]:::backend
