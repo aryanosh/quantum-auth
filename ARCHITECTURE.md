@@ -1,13 +1,83 @@
 ## Architecture (Quantum-Inspired Authentication)
 
-### Overview
+### System Overview
 
-- **Frontend**: React (routes, auth context, webcam capture UX)
-- **Backend**: Flask (JWT auth + biometric verification + PQC/QRNG status)
-- **Storage**: SQLAlchemy models (users + WebAuthn credentials)
-- **Security**: Argon2 password hashing, encrypted biometric templates, JWT sessions
+This project implements a full-stack, quantum-inspired authentication system. It bridges traditional web security with forward-looking cryptographic concepts, specifically focusing on biometric verification secured by Post-Quantum Cryptography (PQC) and Quantum Random Number Generation (QRNG).
 
-### Auth flow (register → login → logout)
+- **Frontend**: React (manages routing, JWT-based auth context, and the webcam capture UX for biometrics)
+- **Backend**: Flask (handles JWT auth generation, biometric feature extraction/verification, and PQC/QRNG logic)
+- **Storage**: SQLAlchemy models with SQLite/Postgres (stores users, hashed passwords, and encrypted WebAuthn/biometric templates)
+- **Security**: Argon2id password hashing, encrypted biometric templates, stateless JWT sessions, and Kyber KEM encryption.
+
+---
+
+### Holistic System Architecture
+
+The following diagram illustrates how the frontend, backend, database, and quantum-safe security core interact with one another:
+
+```mermaid
+flowchart TD
+  %% Styling definitions
+  classDef frontend fill:#61DAFB,stroke:#333,stroke-width:2px,color:#000
+  classDef backend fill:#4B8BBE,stroke:#333,stroke-width:2px,color:#fff
+  classDef db fill:#336791,stroke:#333,stroke-width:2px,color:#fff
+  classDef crypto fill:#F2C811,stroke:#333,stroke-width:2px,color:#000
+  classDef userNode fill:#FF9900,stroke:#333,stroke-width:2px,color:#000
+
+  %% External Actors
+  U(("👤 User")):::userNode
+
+  %% Frontend Layer
+  subgraph Frontend ["🖥️ Frontend (React)"]
+    UI["Routing & UI\n(Tailwind)"]:::frontend
+    AuthCtx["Auth Context\n(JWT Sessions)"]:::frontend
+    BioCapture["Biometric Capture\n(Webcam UX)"]:::frontend
+    
+    UI <--> AuthCtx
+    UI <--> BioCapture
+  end
+
+  %% Backend Layer
+  subgraph Backend ["⚙️ Backend API (Flask)"]
+    Router["API Endpoints\n(/api/login, /api/register)"]:::backend
+    AuthLogic["Auth Manager\n(Argon2id Hashing, JWT)"]:::backend
+    BioProcessor["Biometric Processor\n(Extraction & Matching)"]:::backend
+
+    subgraph SecurityCore ["🔐 Quantum-Safe Core"]
+      PQC["Kyber KEM\n(or Fernet Fallback)"]:::crypto
+      QRNG["ANU QRNG\n(or Secrets Fallback)"]:::crypto
+    end
+    
+    Router --> AuthLogic
+    Router --> BioProcessor
+    
+    BioProcessor <-->|Encrypt/Decrypt| PQC
+    AuthLogic <-->|Entropy for Keys| QRNG
+  end
+
+  %% Storage Layer
+  subgraph Storage ["🗄️ Database (SQLAlchemy)"]
+    DB[("SQLite / Postgres\n(Users + Encrypted Biometrics)")]:::db
+  end
+
+  %% Inter-component flows
+  U -->|Interacts| UI
+  U -->|Provides Face/Fingerprint| BioCapture
+  
+  UI -->|HTTP POST JSON| Router
+  BioCapture -->|Biometric Payload| Router
+  
+  Router -.->|Returns JWT / 401 Challenge| AuthCtx
+  
+  AuthLogic <-->|Read/Write User Row| DB
+  PQC <-->|Store/Retrieve Templates| DB
+```
+
+---
+
+### Authentication Flow (Register → Login → Logout)
+
+The authentication process utilizes a multi-step flow. If a user has enrolled in biometrics, the backend issues a `401 Unauthorized` challenge during a standard password login, prompting the frontend to capture and submit biometric data before issuing the final session token.
 
 ```mermaid
 sequenceDiagram
@@ -39,7 +109,11 @@ sequenceDiagram
   FE->>FE: Clear stored token
 ```
 
-### Biometric enrollment & verification
+---
+
+### Biometric Enrollment & Verification Pipeline
+
+Biometric data is never stored in plaintext. Raw images or sensor data are immediately converted to mathematical features, normalized, and then heavily encrypted before touching the database.
 
 ```mermaid
 flowchart LR
@@ -54,15 +128,21 @@ flowchart LR
   H -- Yes --> J[Issue JWT]
 ```
 
-### PQC / QRNG usage
+---
 
-- **PQC (Kyber KEM)**: used to protect encryption keys when available; otherwise fall back to Fernet.
-- **QRNG**: ANU QRNG when available; otherwise use `secrets`-based fallback.
-- **Why fallback exists**: to keep the demo runnable on typical machines while still demonstrating the architecture and decision points.
+### PQC / QRNG Usage
 
-### Why these design choices (portfolio angle)
+A major differentiator of this architecture is the integration of quantum-safe mechanics:
 
-- **JWT**: straightforward stateless sessions; easy to demo with a dashboard and protected routes.
-- **Argon2id**: modern password hashing best-practice.
-- **Encrypted biometrics**: avoids storing raw biometric data; matches common privacy expectations.
-- **Configurable thresholds**: demonstrates risk tuning and false accept/reject trade-offs.
+- **PQC (Kyber KEM)**: Used to protect the encryption keys that secure the biometric templates in the database. This protects against "harvest now, decrypt later" attacks by future quantum computers. If Kyber is unavailable in the host environment, the system gracefully falls back to standard AES (Fernet).
+- **QRNG**: The system pulls true quantum entropy from the ANU QRNG API for cryptographic operations. If the API is unreachable, it falls back to Python's cryptographically secure pseudo-random number generator (`secrets`).
+- **Why fallback exists**: To ensure the application remains portable, demo-friendly, and runnable on typical local development machines while still demonstrating enterprise-grade architectural decision points.
+
+---
+
+### Design Choices (Portfolio Perspective)
+
+- **JWT (JSON Web Tokens)**: Provides straightforward, stateless sessions that are easy to demonstrate with a frontend dashboard and protected API routes.
+- **Argon2id**: Utilizes the modern, memory-hard password hashing standard recommended by OWASP, resisting GPU brute-force attacks.
+- **Encrypted Biometrics**: Demonstrates a deep understanding of data privacy. By never storing raw biometrics, the architecture aligns with strict compliance frameworks (e.g., GDPR, CCPA).
+- **Configurable Thresholds**: The biometric similarity scoring relies on configurable thresholds, showcasing the ability to tune risk (balancing false-acceptance vs. false-rejection rates) based on security needs.
