@@ -2,7 +2,7 @@
 
 **Post-Quantum Cryptography (PQC)** meets **Biometric Multi-Factor Auth**.
 
-A full-stack authentication ecosystem designed to showcase ** defence-in-depth engineering**. This project implements a multi-stage verification pipeline combining modern password hashing, facial biometric landmarks, and a fallback strategy for Post-Quantum Cryptography (PQC).
+A full-stack authentication ecosystem designed to showcase defence-in-depth engineering. This project implements a multi-stage verification pipeline combining modern password hashing, facial biometric landmarks, and a fallback strategy for Post-Quantum Cryptography (PQC).
 
 [View Architecture Deep-Dive](ARCHITECTURE.md) · Explore API Docs (see **Key endpoints** below)
 
