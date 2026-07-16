@@ -20,7 +20,7 @@ In a world approaching **“Q-Day,”** standard RSA/ECC encryption becomes vuln
 
 ## ✨ Key Features
 
-- **Multi-step adaptive auth**: users are prompted for biometrics only after primary credentials succeed, minimizing friction.
+- **Multi-step adaptive auth**: users are prompted for biometrics only after primary credentials succeed, minimising friction.
 - **Biometric integrity**: MediaPipe Face Mesh landmarks; biometric templates are encrypted before storage.
 - **Entropy-as-a-service**: integrates ANU Quantum Random Number Generation (QRNG) for high-entropy operations (with secure local fallback).
 - **Security-first UX**: protected routes, JWT session persistence, and real-time webcam quality feedback.
